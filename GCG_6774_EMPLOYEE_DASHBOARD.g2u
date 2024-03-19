@@ -1,0 +1,460 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Form..Create(BaseForm)
+Gui.Form..Caption("Employee Dashboard")
+Gui.Form..Size(1024,720)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..AlwaysOnTop(False)
+Gui.Form..FontName("Tahoma")
+Gui.Form..FontSize(8.25)
+Gui.Form..ControlBox(True)
+Gui.Form..MaxButton(True)
+Gui.Form..MinButton(True)
+Gui.Form..MousePointer(0)
+Gui.Form..Moveable(True)
+Gui.Form..Sizeable(True)
+Gui.Form..ShowInTaskBar(True)
+Gui.Form..TitleBar(True)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form.GSGC_EMP.Create(GsGridControl)
+Gui.Form.GSGC_EMP.Enabled(True)
+Gui.Form.GSGC_EMP.Visible(True)
+Gui.Form.GSGC_EMP.Zorder(0)
+Gui.Form.GSGC_EMP.Size(1019,660)
+Gui.Form.GSGC_EMP.Position(3,28)
+Gui.Form.GSGC_EMP.Anchor(15)
+Gui.Form.GSGC_EMP.Event(CellValueChanged,GSGC_EMP_CellValueChanged)
+Gui.Form.cmdSave.Create(Button)
+Gui.Form.cmdSave.Enabled(True)
+Gui.Form.cmdSave.Visible(True)
+Gui.Form.cmdSave.Zorder(0)
+Gui.Form.cmdSave.Size(53,22)
+Gui.Form.cmdSave.Position(969,2)
+Gui.Form.cmdSave.Caption("Save")
+Gui.Form.cmdSave.FontName("Tahoma")
+Gui.Form.cmdSave.FontSize(8.25)
+Gui.Form.cmdSave.BackColor(9498256)
+Gui.Form.cmdSave.ForeColor(0)
+Gui.Form.cmdSave.Event(Click,cmdSave_Click)
+Gui.Form.cmdSave.Anchor(9)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+'Program.External.Include.Library("6006Validate.lib")
+Program.External.Include.Library(6006.lib)
+
+Program.Sub.Preflight.End
+Program.Sub.Main.Start
+'Bryan Pham
+'07/10/2022
+'Customer: VULCAN Industries
+'016947-12520221645-0
+'Scope: Employee Dashboard where users can modify info
+
+Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+f.ODBC.Connection!con.OpenCompanyConnection
+F.Intrinsic.Control.CallSub(SetContextMenus)
+f.Intrinsic.Control.CallSub(loadDT_EMP)
+f.Intrinsic.Control.CallSub(loadGV_EMP)
+
+gui.Form..Show
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.loadDT_EMP.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+f.Intrinsic.Control.If(v.DataTable.dtEMP.Exists,=,True)
+	f.Data.Datatable.Close("dtEMP")
+f.Intrinsic.Control.EndIf
+f.Intrinsic.UI.InvokeWaitDialog("Loading data...","Please wait")
+'load employees info
+f.Data.Datatable.CreateFromSQL("dtEMP","con","Select A.EMPLOYEE, LEFT(A.NAME,POSITION(',',A.NAME)-1) as LAST_NAME,SUBSTRING(A.NAME, POSITION(',',A.NAME)+2,LENGTH(RTRIM(A.NAME))-POSITION(',',A.NAME)) as FIRST_NAME, A.DATE_HIRE,A.DATE_TERMINATION,RTRIM(A.ALPHA_SORT) as BADGE_NO, A.SHIFT, A.DEPT_EMPLOYEE,A.PR_BALANCE_GROUP,RTRIM(A.COMMENTS_2) as SUP,RTRIM(B.LEAD) as LEAD,CASE WHEN A.EMPLOYEE between 1501 and 20000 then 'Y' else 'N' end as TEMP_EMP,RTRIM(COMMENTS_1) as TEMP_AGENCY,  A.DATE_RAISE, RTRIM(A.COMMENTS_3) as REHIRE, RTRIM(C.REASON) as REASON,C.DATE_CHANGED,C.USER_CHG,'' as CHANGED from V_EMPLOYEE_MSTR A left join GCG_6774_LEAD B on A.EMPLOYEE = B.EMPLOYEE left join GCG_6774_REASON C on A.EMPLOYEE = C.EMPLOYEE",true)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.loadDT_EMP.End
+
+Program.Sub.loadGV_EMP.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+Gui.Form.GSGC_EMP.AddGridViewFromDataTable("gvEMP","dtEMP")
+Gui.Form.GSGC_EMP.SuspendLayout()
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","CHANGED","Visible","False")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","EMPLOYEE","Caption","Employee No.")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","EMPLOYEE","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","EMPLOYEE","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","EMPLOYEE","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","EMPLOYEE","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","EMPLOYEE","ReadOnly","True")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","EMPLOYEE","AllowEdit","False")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LAST_NAME","Caption","Last Name")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LAST_NAME","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LAST_NAME","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LAST_NAME","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LAST_NAME","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LAST_NAME","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LAST_NAME","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","FIRST_NAME","Caption","First Name")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","FIRST_NAME","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","FIRST_NAME","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","FIRST_NAME","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","FIRST_NAME","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","FIRST_NAME","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","FIRST_NAME","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","Caption","Start Date")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","AllowEdit","True")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_HIRE","DisplayCustomDatetime","d")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","Caption","Term. Date")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","AllowEdit","True")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_TERMINATION","DisplayCustomDatetime","d")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","BADGE_NO","Caption","Badge No.")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","BADGE_NO","MinWidth","70")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","BADGE_NO","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","BADGE_NO","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","BADGE_NO","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","BADGE_NO","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","BADGE_NO","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SHIFT","Caption","Shift")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SHIFT","MinWidth","60")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SHIFT","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SHIFT","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SHIFT","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SHIFT","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SHIFT","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DEPT_EMPLOYEE","Caption","Department")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DEPT_EMPLOYEE","MinWidth","70")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DEPT_EMPLOYEE","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DEPT_EMPLOYEE","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DEPT_EMPLOYEE","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DEPT_EMPLOYEE","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DEPT_EMPLOYEE","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","PR_BALANCE_GROUP","Caption","Balancing group")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","PR_BALANCE_GROUP","MinWidth","100")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","PR_BALANCE_GROUP","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","PR_BALANCE_GROUP","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","PR_BALANCE_GROUP","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","PR_BALANCE_GROUP","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","PR_BALANCE_GROUP","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SUP","Caption","Supervisor")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SUP","MinWidth","120")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SUP","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SUP","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SUP","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SUP","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","SUP","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LEAD","Caption","Lead")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LEAD","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LEAD","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LEAD","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LEAD","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LEAD","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","LEAD","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_EMP","Caption","Temp. Emp.")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_EMP","MinWidth","70")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_EMP","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_EMP","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_EMP","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_EMP","ReadOnly","True")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_EMP","AllowEdit","False")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_AGENCY","Caption","Temp. Agency")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_AGENCY","MinWidth","150")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_AGENCY","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_AGENCY","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_AGENCY","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_AGENCY","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","TEMP_AGENCY","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","Caption","Date Last Raised")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","AllowEdit","True")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_RAISE","DisplayCustomDatetime","d")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REHIRE","Caption","Eligible for rehire")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REHIRE","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REHIRE","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REHIRE","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REHIRE","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REHIRE","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REHIRE","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REASON","Caption","Reason")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REASON","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REASON","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REASON","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REASON","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REASON","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","REASON","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","USER_CHG","Caption","User")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","USER_CHG","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","USER_CHG","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","USER_CHG","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","USER_CHG","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","USER_CHG","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","USER_CHG","AllowEdit","True")
+
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","Caption","Date Changed")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","MinWidth","80")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","HeaderFontBold",True)
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","HeaderHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","CellHAlignment","Center")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","ReadOnly","False")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","AllowEdit","True")
+gui.Form.GSGC_EMP.SetColumnProperty("gvEMP","DATE_CHANGED","DisplayCustomDatetime","d")
+
+Gui.Form.GSGC_EMP.ResumeLayout()
+Gui.Form.GSGC_EMP.MainView("gvEMP")
+f.Intrinsic.UI.CloseWaitDialog	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.loadGV_EMP.End
+
+
+Program.Sub.cmdSave_Click.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.iCnt.Declare
+v.Local.sName.Declare
+v.Local.sDateHire.Declare
+v.Local.sDateTerm.Declare
+v.Local.sDateRaise.Declare
+v.Local.sBirthDate.Declare
+v.Local.sSQL.Declare
+v.Local.sFilter.Declare
+v.Local.sRet.Declare
+V.Local.sFileSource.Declare
+V.Local.sFileTarget.Declare
+v.Local.bExists.Declare
+v.Local.sDate.Declare
+
+'create custom folder for backing up employee master
+f.Intrinsic.String.Build("{0}\CUSTOM\6774\{1}",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Local.sFileTarget)
+f.Intrinsic.File.DirExists(v.Local.sFileTarget,v.Local.bExists)
+f.Intrinsic.Control.If(v.Local.bExists,=,False)
+	f.Intrinsic.File.CreateDir(v.Local.sFileTarget)
+f.Intrinsic.Control.EndIf
+
+'concatenate date to the file
+f.Intrinsic.String.Format(v.Ambient.Date,"MMDDYY",v.Local.sDate)
+f.Intrinsic.String.Build("{0}\CUSTOM\6774\{1}\WMAST{1}_{2}",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Local.sDate,v.Local.sFileTarget)
+
+'original file
+f.Intrinsic.String.Build("{0}\FILES\WMAST{1}",v.Caller.GlobalDir,v.Caller.CompanyCode,v.Local.sFileSource)
+F.Intrinsic.File.CopyFile(V.Local.sFileSource,V.Local.sFileTarget)
+
+f.Intrinsic.UI.Msgbox("Employees data will be overwritten. Do you want to continue?","Attention!",4,v.Local.sRet)
+f.Intrinsic.Control.If(v.Local.sRet,=,"6")
+'update changed rows only
+	v.Local.sFilter.Set("CHANGED = 'Y'")
+	f.Data.DataView.Create("dtEMP","dvEMP",22,v.Local.sFilter,"")
+	f.Intrinsic.Control.For(v.Local.iCnt,0,v.DataView.dtEMP!dvEMP.RowCount--,1)
+	'format name
+		f.Intrinsic.String.Build("{0}, {1}",v.DataView.dtEMP!dvEMP(v.Local.iCnt).LAST_NAME!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).First_NAME!FieldValTrim,v.Local.sName)
+	'format all the dates - 000000 is for 01/01/1900
+
+		f.Intrinsic.Control.If(v.DataView.dtEMP!dvEMP(v.Local.iCnt).DATE_HIRE!FieldValTrim,=,"1/1/1900")
+			v.Local.sDateHire.Set("000000")
+		f.Intrinsic.Control.Else
+			f.Intrinsic.String.Format(v.DataView.dtEMP!dvEMP(v.Local.iCnt).DATE_HIRE!FieldValTrim,"MMDDYY",v.Local.sDateHire)
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.If(v.DataView.dtEMP!dvEMP(v.Local.iCnt).DATE_TERMINATION!FieldValTrim,=,"1/1/1900")
+			v.Local.sDateTerm.Set("000000")
+		f.Intrinsic.Control.Else
+			f.Intrinsic.String.Format(v.DataView.dtEMP!dvEMP(v.Local.iCnt).DATE_TERMINATION!FieldValTrim,"MMDDYY",v.Local.sDateTerm)
+		f.Intrinsic.Control.EndIf
+		
+		f.Intrinsic.Control.If(v.DataView.dtEMP!dvEMP(v.Local.iCnt).DATE_RAISE!FieldValTrim,=,"1/1/1900")
+			v.Local.sDateRaise.Set("000000")
+		f.Intrinsic.Control.Else
+			f.Intrinsic.String.Format(v.DataView.dtEMP!dvEMP(v.Local.iCnt).DATE_RAISE!FieldValTrim,"MMDDYY",v.Local.sDateRaise)
+		f.Intrinsic.Control.EndIf
+
+	'update EMPLOYEE_MSTR
+		f.Intrinsic.String.Build("Update EMPLOYEE_MSTR set NAME = '{0}', DATE_HIRE = '{1}', DATE_TERMINATION = '{2}', ALPHA_SORT = '{3}', SHIFT = '{4}', DEPT_EMPLOYEE = '{5}', PR_BALANCE_GROUP = '{6}', COMMENTS_2 = '{7}', COMMENTS_1 = '{8}', DATE_RAISE = '{9}' , COMMENTS_3 = '{10}' where EMPLOYEE = '{11}'",v.Local.sName,v.Local.sDateHire,v.Local.sDateTerm,v.DataView.dtEMP!dvEMP(v.Local.iCnt).BADGE_NO!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).SHIFT!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).DEPT_EMPLOYEE!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).PR_BALANCE_GROUP!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).SUP!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).TEMP_AGENCY!FieldValTrim,v.Local.sDateRaise,v.DataView.dtEMP!dvEMP(v.Local.iCnt).REHIRE!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).EMPLOYEE!FieldValTrim,v.Local.sSQL)
+		f.ODBC.Connection!con.Execute(v.Local.sSQL)
+	''update LEAD in custom table
+		f.Intrinsic.Control.If(v.DataView.dtEMP!dvEMP(v.Local.iCnt).LEAD!FieldValTrim,<>,"")
+			f.Intrinsic.String.Build("Select * from GCG_6774_LEAD where EMPLOYEE = '{0}'",v.DataView.dtEMP!dvEMP(v.Local.iCnt).EMPLOYEE!FieldValTrim,v.Local.sSQL)
+			f.ODBC.Connection!con.ExecuteAndReturn(v.Local.sSQL,v.Local.sSQL)
+			f.Intrinsic.Control.If(v.Ambient.ExecuteAndReturnEOF,=,True)
+				f.Intrinsic.String.Build("Insert into GCG_6774_LEAD values('{0}','{1}')",v.DataView.dtEMP!dvEMP(v.Local.iCnt).EMPLOYEE!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).LEAD!FieldValTrim,v.Local.sSQL)
+			f.Intrinsic.Control.Else
+				f.Intrinsic.String.Build("Update GCG_6774_LEAD set LEAD = '{0}' where EMPLOYEE = '{1}'",v.DataView.dtEMP!dvEMP(v.Local.iCnt).LEAD!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).EMPLOYEE!FieldValTrim,v.Local.sSQL)
+			f.Intrinsic.Control.EndIf
+			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+		f.Intrinsic.Control.EndIf
+	'add log for change reason/ date/ user
+		f.Intrinsic.Control.If(v.DataView.dtEMP!dvEMP(v.Local.iCnt).REASON!FieldValTrim,<>,"")
+			f.Intrinsic.String.Build("Select * from GCG_6774_REASON where EMPLOYEE = '{0}'",v.DataView.dtEMP!dvEMP(v.Local.iCnt).EMPLOYEE!FieldValTrim,v.Local.sSQL)
+			f.ODBC.Connection!con.ExecuteAndReturn(v.Local.sSQL,v.Local.sSQL)
+			f.Intrinsic.Control.If(v.Ambient.ExecuteAndReturnEOF,=,True)
+				f.Intrinsic.String.Build("Insert into GCG_6774_REASON values('{0}','{1}','{2}','{3}')",v.DataView.dtEMP!dvEMP(v.Local.iCnt).EMPLOYEE!FieldValTrim,v.DataView.dtEMP!dvEMP(v.Local.iCnt).REASON!FieldValTrim,v.Ambient.Date.PervasiveDate,v.Caller.User,v.Local.sSQL)
+			f.Intrinsic.Control.Else
+				f.Intrinsic.String.Build("Update GCG_6774_REASON set REASON = '{0}', DATE_CHANGED = '{1}', USER_CHG = '{2}' where EMPLOYEE = '{3}'",v.DataView.dtEMP!dvEMP(v.Local.iCnt).REASON!FieldValTrim,v.Ambient.Date.PervasiveDate,v.Caller.User,v.DataView.dtEMP!dvEMP(v.Local.iCnt).EMPLOYEE!FieldValTrim,v.Local.sSQL)
+			f.Intrinsic.Control.EndIf
+			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Next(v.Local.iCnt)
+	
+	f.Intrinsic.Control.CallSub(Refresh)
+	
+f.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.Form_UnLoad.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+f.ODBC.Connection!con.Close
+f.Intrinsic.Control.End
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.GSGC_EMP_CellValueChanged.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sEmpName.Declare
+
+'marked changed rows
+f.Data.Datatable.SetValue("dtEMP",v.Args.RowIndex,"CHANGED","Y")
+f.Data.Datatable.AcceptChanges("dtEMP")
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.GSGC_EMP_CellValueChanged.End
+
+Program.Sub.SetContextMenus.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	v.Local.bRet.Declare
+	
+	Gui.Form..ContextMenuCreate("ctxEMP")
+	Gui.Form.GSGC_EMP.ContextMenuAttach("ctxEMP")
+	Gui.Form..ContextMenuAddItem("ctxEMP","Refresh",0,"Refresh")
+	Gui.Form..ContextMenuAddItem("ctxEMP","Export",0,"Export")	
+	Gui.Form..ContextMenuSetItemEventHandler("ctxEMP","Export","MenuClickExport")	
+	Gui.Form..ContextMenuSetItemEventHandler("ctxEMP","Refresh","Refresh")	
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.SetContextMenus.End
+
+Program.Sub.MenuClickExport.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sFileExport.Declare
+	V.Local.bExcel.Declare
+	V.Local.bFileLocked.Declare
+	V.Local.sMsg.Declare
+
+	F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+	F.Intrinsic.Control.If(V.Local.bExcel)
+		F.Intrinsic.String.Build("{0}\GCG_6774_Export.xlsx",V.Caller.LocalGssTempDir,V.Local.sFileExport)
+		F.Intrinsic.File.IsFileLocked(V.Local.sFileExport,V.Local.bFileLocked)
+		F.Intrinsic.Control.If(V.Local.bFileLocked)
+			F.Intrinsic.String.Build("File is already open. Please close and export again.{0}File: {1}",V.Ambient.NewLine,V.Local.sFileExport,V.Local.sMsg)
+			F.Intrinsic.UI.Msgbox(V.Local.sMsg,"File In Use")
+		F.Intrinsic.Control.Else
+			Gui.Form.GSGC_EMP.Export(V.Local.sFileExport,"xlsx")
+			F.Intrinsic.Task.ShellExec(0,"",V.Local.sFileExport,"","",1)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("{0}\GCG_6774_Export.csv",V.Caller.LocalGssTempDir,V.Local.sFileExport)
+		F.Intrinsic.File.IsFileLocked(V.Local.sFileExport,V.Local.bFileLocked)
+		F.Intrinsic.Control.If(V.Local.bFileLocked)
+			F.Intrinsic.String.Build("File is already open. Please close and export again.{0}File: {1}",V.Ambient.NewLine,V.Local.sFileExport,V.Local.sMsg)
+			F.Intrinsic.UI.Msgbox(V.Local.sMsg,"File In Use")
+		F.Intrinsic.Control.Else
+			Gui.Form.GSGC_EMP.Export(V.Local.sFileExport,"csv")
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Task.ShellExec(0,"",V.Local.sFileExport,"","",1)
+	F.Intrinsic.Control.EndIf
+
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.MenuClickExport.End
+
+Program.Sub.Refresh.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	f.Intrinsic.Control.CallSub(loadDT_EMP)
+	f.Intrinsic.Control.CallSub(loadGV_EMP)
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.Refresh.End
+
+Program.Sub.Comments.Start
+${$5$}$20.1.8238.20344$}$1
+${$6$}$bpham$}$20220729114254412$}$Di0riF4Q5RIv6jxva5zSWBaTvp+T0Dt68nMrZ20pzZ8RlvfO3U0XlieuDYoYs91DnJpQ9Et1k/w=
+Program.Sub.Comments.End
